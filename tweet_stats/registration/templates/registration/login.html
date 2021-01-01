@@ -1,0 +1,39 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<style>.errorlist{color:red;}</style>
+<main role="main">
+  <div class="container">
+    <div class="row mt-3">
+      <div class="col-md-9 mx-auto mb-5">
+        {% if 'registered' in request.GET %}
+        <p style="color:green">User registered!!! </p>
+        {% endif %}
+        <form action="" method="post">{% csrf_token %}
+          <h3 class="mb-4">Log in</h3>
+          {% if form.non_field_errors %}
+            <p style="color:red">Wrong user or password. Please try again</p>
+          {% endif %}
+          <p>
+            <input type="text" name="username" autofocus maxlength="254" required
+              id="id_username" class="form-control" placeholder="Username"/>
+          </p>
+          <p>
+            <input type="password" name="password" required
+              id="id_password" class="form-control" placeholder="Password"/>
+          </p>
+          <p><input type="submit" class="btn btn-primary btn-block" value="Login"></p>
+          <p>
+            If you want to change your password please click <a href="{% url 'password_reset' %}"> here </a> 
+          </p>
+        </form>
+          <p>
+            If you want to see Dashboard as an Anonymous User please click <a href="{% url 'main_app:dayplot' %}"> here </a> 
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

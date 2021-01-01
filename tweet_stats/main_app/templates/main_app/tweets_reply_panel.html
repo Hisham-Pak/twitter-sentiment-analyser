@@ -1,0 +1,324 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="apple-touch-icon" sizes="76x76" href="{% static 'assets/img/apple-icon.png' %}">
+  <link rel="icon" type="image/png" href="{% static 'assets/img/favicon.png' %}">
+  <title>
+    Twitter sentiment analysis
+  </title>
+  <!--     Fonts and icons     -->
+  <link href="https://fonts.googleapis.com/css?family=Poppins:200,300,400,600,700,800" rel="stylesheet" />
+  <link href="https://use.fontawesome.com/releases/v5.0.6/css/all.css" rel="stylesheet">
+  <!-- Nucleo Icons -->
+  <link href="{% static 'assets/css/nucleo-icons.css' %}" rel="stylesheet" />
+  <!-- CSS Files -->
+  <link href="{% static 'assets/css/black-dashboard.css' %}" rel="stylesheet" />
+  <!-- CSS Just for demo purpose, don't include it in your project -->
+  <link href="{% static 'assets/demo/demo.css' %}" rel="stylesheet" />
+  
+  {% comment %} include math.js {% endcomment %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.2.0/math.min.js" integrity="sha512-4VdpCxbABk7wjJb/9z/d3EyibeHwUY0FgHbFO4EiIPVtyyV6llhENCvzRk8SH5D86+Jwm6QLagqRRnEJCd3gJg==" crossorigin="anonymous"></script>
+
+  <!--Add emoticons 
+  <script src="https://cdn.tiny.cloud/1/eg3rzac5wir62r0d88d285g4fu7i2iux78667qd4sya1kh3y/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+  <script>
+  tinymce.init({
+    selector: "#custom_text",
+    plugins: "emoticons",
+    toolbar: "emoticons",
+    toolbar_location: "bottom",
+    menubar: false
+  });
+</script> 
+-->
+
+</head>
+
+<body class="">
+  <div class="wrapper">
+    <div class="main-panel">
+      <!-- Navbar -->
+      <nav class="navbar navbar-expand-lg navbar-absolute navbar-transparent ">
+        <div class="container-fluid">
+          <div class="navbar-wrapper">
+            <div class="navbar-toggle d-inline">
+              <button type="button" class="navbar-toggler">
+                <span class="navbar-toggler-bar bar1"></span>
+                <span class="navbar-toggler-bar bar2"></span>
+                <span class="navbar-toggler-bar bar3"></span>
+              </button>
+            </div>
+            <a href="{% url 'main_app:dayplot'%}">Back to Dashboard</a>
+          </div>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-bar navbar-kebab"></span>
+            <span class="navbar-toggler-bar navbar-kebab"></span>
+            <span class="navbar-toggler-bar navbar-kebab"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navigation">
+            <ul class="navbar-nav ml-auto">
+              <li class="dropdown nav-item">
+                <a href="javascript:void(0)" class="dropdown-toggle nav-link" data-toggle="dropdown">
+              </li>
+              <li class="dropdown nav-item">
+                <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">
+                  <div class="photo">
+                    <img src="{% static 'assets/img/anime3.png' %}" alt="Profile Photo">
+                  </div>
+                  <b class="caret d-none d-lg-block d-xl-block"></b>
+                  <p class="d-lg-none">
+                    Log out
+                  </p>
+                </a>
+                <ul class="dropdown-menu dropdown-navbar">
+                {% if request.user.is_authenticated %}
+
+                  <li class="nav-link"><a href="{% url 'logout' %}" class="nav-item dropdown-item">Log out</a></li>
+                {% else %}
+                  <li class="nav-link"><a href="{% url 'signup' %}" class="nav-item dropdown-item">Register</a></li>
+                  <li class="nav-link"><a href="{% url 'login' %}" class="nav-item dropdown-item">Login</a></li>
+                {%endif%}
+
+
+                </ul>
+              </li>
+              <li class="separator d-lg-none"></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="modal modal-search fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModal" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <input type="text" class="form-control" id="inlineFormInputGroup" placeholder="SEARCH">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <i class="tim-icons icon-simple-remove"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- End Navbar -->
+<!-- Start days table -->
+        <div class="row mt-5">
+          <div class="col-lg-12 col-md-12">
+            <div class="card mt-5">
+              <div class="card-header">
+                <h4 class="card-title"> </h4>
+              </div>
+              <div class="card-body">
+                <form action="{% url 'main_app:reply_with_image' sub_category %} " method="post" enctype="multipart/form-data"> {% csrf_token %}
+                  <div class="mb-3">
+                      <input id="negative" type="checkbox" autocomplete="off" name="negative">
+                      <label for="negative"> Reply to negative Tweets</label>
+                      <input id ="alarming" type="checkbox" autocomplete="off" name="alarming">
+                      <label for="alarming"> Reply to alarming Tweets</label>
+                      <input id="positive" type="checkbox" autocomplete="off" name="positive">
+                      <label for="positive"> Reply to positive Tweets</label>
+                  </div>
+                  <div class="row mb-4">
+                    <div class="col">
+                    <input type="submit" id="post_submit" class="btn btn-primary btn-sm disabled" value="Send Reply with new tweets">                      
+                        <div>
+                          <textarea id="custom_text" name="custom_text" rows="5" cols="70" autocomplete="off" maxlength="280"></textarea>
+                        <div>
+                          <input id="custom_tweet" type="checkbox"  name="custom_tweet">
+                          <label for="custom_tweet">Use Custom tweet</label>
+                        </div>
+                        </div>
+                        <div>
+                          <input type="file" id="tweet_file" name="tweet_file">
+                          <label for="tweet_file">Upload a picture </label>
+                        </div>
+                    </div>
+                  <div class="col-sm-6">
+                    <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                      {% for type in tweets_type %}
+                        <label class="btn btn-sm btn-primary btn-simple {% if type == 'All' %}active{% endif %}" id="tweet{{ forloop.counter0 }}">
+                          <input type="radio" name="options" checked>
+                          <span class="d-none d-sm-block d-md-block d-lg-block d-xl-block">{{ type }}</span>
+                        </label> 
+                      {% endfor %}
+                    </div>
+                  </div>
+                  </div>
+                </form>                  
+                  <button id = "send" class="btn btn-primary btn-sm mr-5" > Send Reply with existing tweets</button>
+                  <div class="row">
+                    <div>
+                      <div class="table-responsive">
+                        <table class="table tablesorter " id="">
+                          <thead class=" text-primary">
+                            <tr>
+                              <th>
+                                Select
+                              </th>
+                              <th>
+                                Tweet ID
+                              </th>
+                              <th>
+                                Tweet Date
+                              </th>
+                              <th>
+                                Tweet Username
+                              </th>
+                              <th>
+                                Tweet Content 
+                              </th>
+                              <th>
+                                Tweet URL
+                              </th>
+                              <th>
+                                Tweet Sentiment
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {%for tweet in tweetlist%}
+                            <tr>
+                              <td>
+                                <input type="checkbox" autocomplete="off">
+                              </td>
+                              <td>
+                                {{tweet.tweet_ID}}
+                              </td>
+                              <td>
+                                {{tweet.tweet_date}}
+                              </td>
+                              <td id="username">
+                                {{tweet.tweet_username}}
+                              </td>
+                              <td>
+                                {{tweet.tweet_content}}
+                              </td>
+                              <td>
+                                {{tweet.tweet_URL}}
+                              </td>
+                              <td>
+                                {{tweet.tweet_sentiment}}
+                              </td>
+                            </tr>
+                          {%endfor%}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="footer">
+        <div class="container-fluid">
+          <ul class="nav">
+            <li class="nav-item">
+              <a href="javascript:void(0)" class="nav-link">
+                Creative Tim
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="javascript:void(0)" class="nav-link">
+                About Us
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="javascript:void(0)" class="nav-link">
+                Blog
+              </a>
+            </li>
+          </ul>
+          <div class="copyright">
+            ©
+            <script>
+              document.write(new Date().getFullYear())
+            </script>2018 made with <i class="tim-icons icon-heart-2"></i> by
+            <a href="javascript:void(0)" target="_blank">Creative Tim</a> for a better web.
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!--   Core JS Files   -->
+  <script src="{% static 'assets/js/core/jquery.min.js' %}"></script>
+  <script src="{% static 'assets/js/core/popper.min.js' %}"></script>
+  <script src="{% static 'assets/js/core/bootstrap.min.js' %}"></script>
+  <script src="{% static 'assets/js/plugins/perfect-scrollbar.jquery.min.js' %}"></script>
+  <!--  Google Maps Plugin    -->
+  <!-- Place this tag in your head or just before your close body tag. -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
+  <!-- Chart JS -->
+  <script src="{% static 'assets/js/plugins/chartjs.min.js' %}"></script>
+  <!--  Notifications Plugin    -->
+  <script src="{% static 'assets/js/plugins/bootstrap-notify.js' %}"></script>
+  <!-- Control Center for Black Dashboard: parallax effects, scripts for the example pages etc -->
+  <script src="{% static 'assets/js/black-dashboard.min.js' %}"></script><!-- Black Dashboard DEMO methods, don't include it in your project! -->
+
+<!-- Tweet Reply logic -->
+<!--<script src="{% static 'assets/js/tweets-reply.js' %}"></script> -->
+<script>
+// Search for selected tweets and save them into the "replies" Array
+
+var replies = []
+$("tr").on("click", "input", function(){
+        var tweet_ID = $(this).closest('tr').find("td").eq(1).text().replace(/\s/g, '');
+        if (($(this).closest('tr').find("td").eq(0).find('input').prop("checked") == true) && replies.includes(tweet_ID) == false )  {
+          replies.push(tweet_ID);
+          console.log(replies);
+          }
+        else if (($(this).closest('tr').find("td").eq(0).find('input').prop("checked") == false) && replies.includes(tweet_ID) == true ) {
+          replies.splice(replies.indexOf(tweet_ID),1);
+          console.log(replies);
+        }
+        })
+
+
+//GET REQUEST
+
+$("#send").on("click", function(){
+   var url = "testjs" 
+  // Pass all selected tweets IDs as a GET parameter, each tweet_ID separated by "-"
+    var content = replies.join('-')
+    url += "?content=" + content
+    if ($("#negative").is(":checked")) {
+      url +="&negative=Negative"
+    }
+    if ($("#positive").is(":checked")) {
+      url +="&positive=Positive"
+    }
+    if ($("#alarming").is(":checked")) {
+      url +="&alarming=Alarming"
+    }
+    if ($("#custom_tweet").is(":checked")) {
+      url +="&custom_tweet=custom_tweet"
+      var text = encodeURIComponent(document.getElementById("custom_text").value);
+      url +="&text=" + text
+    }    
+    fetch(url, {'credentials':'include'}).then(response => response.json()).then(function(data){
+      console.log(data.created)
+      console.log(data.arr)
+      console.log(data.custom_tweet)
+  })
+})
+
+$("#post_submit").on("click", function(){
+  var content = replies.join('-')
+})
+
+$("#custom_tweet").on("click", function(){
+  $("#post_submit").toggleClass("disabled");
+  $("#send").toggleClass("disabled");
+})
+</script>
+
+{% comment %} Filtering tweets by category {% endcomment %}
+<script src="{% static 'assets/js/TableFilters.js' %}"></script>
+</body>
+
+</html>
